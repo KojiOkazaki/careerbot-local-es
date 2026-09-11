@@ -6,6 +6,7 @@
 - ESの本文・添削結果は **外部に一切送信しません**
 - 利用料・API料金は **かかりません**
 - 無償・無保証・サポートなし（下記「利用条件」参照）
+- 姉妹ツール：[Careerbot Local Note](https://github.com/KojiOkazaki/careerbot-local-note)（面談の相談記録）／[Careerbot Local Interview Note](https://github.com/KojiOkazaki/careerbot-local-interview-note)（模擬面接の記録・フィードバック）
 - 同梱の添削プロンプトは **簡易版**（基本の観点のみ）です。X版・LINE版キャリアボットで運用している正式版（種類別の詳細チェック観点・面接深掘り観点）は有償で提供しています（[prompts/README.md](prompts/README.md)）
 
 > **重要**：添削結果はAIの下書きです。必ず職員が読んで判断し、学生に渡す言葉を選んでください。ESには学生の個人情報が含まれます。貼り付け前に氏名等を消し、履歴の保管・削除は所属大学の規程に従ってください。
