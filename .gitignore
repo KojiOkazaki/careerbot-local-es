@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+# 正式版プロンプト（非公開）
+prompts/es_review.md
+prompts/es_review_v*.md

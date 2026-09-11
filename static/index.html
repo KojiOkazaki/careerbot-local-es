@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Careerbot Local ES</title>
+<style>
+  :root{
+    --bg:#F2F4F3; --surface:#FFFFFF; --ink:#1B2730; --muted:#66737B; --line:#DDE2E5;
+    --accent:#1E3A8A; --accent-soft:#E6ECF9; --ok:#2A7A5A; --warn:#B0561F; --rec:#C2392B;
+    --radius:6px;
+    font-family:"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic UI",Meiryo,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-size:14px;line-height:1.7}
+  button{font:inherit;cursor:pointer}
+  button:disabled{cursor:not-allowed;opacity:.45}
+  button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  header{display:flex;align-items:baseline;gap:16px;padding:14px 28px;border-bottom:1px solid var(--line);background:var(--surface)}
+  header h1{margin:0;font-size:16px;font-weight:600;letter-spacing:.02em}
+  header .local{color:var(--ok);font-size:12px}
+  header .local::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--ok);margin-right:6px;vertical-align:1px}
+  main{display:grid;grid-template-columns:minmax(360px,44%) 1fr;gap:24px;padding:24px 28px;max-width:1360px}
+  @media (max-width:900px){main{grid-template-columns:1fr}}
+
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;margin-bottom:16px}
+  .card h2{margin:0 0 10px;font-size:13px;font-weight:600;color:var(--muted)}
+  .check{list-style:none;margin:0;padding:0}
+  .check li{display:flex;gap:8px;padding:3px 0;border-top:1px solid var(--line)}
+  .check li:first-child{border-top:0}
+  .check .mark{width:16px;flex:none;font-weight:700}
+  .check .ok .mark{color:var(--ok)} .check .ng .mark{color:var(--warn)}
+  .check .hint{display:block;color:var(--muted);font-size:12px;line-height:1.5}
+  .check .hint a{color:var(--accent)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px}
+  .field{margin:6px 0}
+  .field label{display:block;font-size:12px;color:var(--muted);margin-bottom:2px}
+  .field input,.field select,.field textarea{width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:var(--radius);font:inherit;background:#fff;line-height:1.6}
+  textarea#text{min-height:300px;resize:vertical}
+  textarea#memo{min-height:56px;resize:vertical}
+  .count{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;margin-top:2px}
+  .count .over{color:var(--rec);font-weight:600}
+  .btn{display:inline-block;padding:9px 16px;border-radius:var(--radius);border:1px solid var(--line);background:#fff;color:var(--ink)}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  .btn.wide{width:100%;text-align:center;padding:12px}
+  .btn.small{padding:5px 10px;font-size:12px}
+  .danger{color:var(--rec);border-color:#F0D6D3}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .note{color:var(--muted);font-size:12px;margin:8px 0 0}
+  .sessions{list-style:none;margin:0;padding:0;max-height:220px;overflow:auto}
+  .sessions li{padding:5px 0;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:8px}
+  .sessions li:first-child{border-top:0}
+  .sessions a{color:var(--accent);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .sessions a:hover{text-decoration:underline}
+  .sessions time{color:var(--muted);font-size:12px;flex:none}
+
+  .doc{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);min-height:70vh;display:flex;flex-direction:column}
+  .doc-head{padding:14px 24px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+  .doc-head .title{font-weight:600}
+  .doc-head .meta{color:var(--muted);font-size:12px}
+  .doc-body{padding:20px 24px 32px;flex:1}
+  .empty{color:var(--muted);padding:60px 0;text-align:center;line-height:2}
+  .md{max-width:76ch}
+  .md h2{font-size:15px;margin:22px 0 6px;padding-bottom:4px;border-bottom:1px solid var(--line)}
+  .md h2:first-child{margin-top:0}
+  .md h2.staff{color:var(--warn);border-bottom-style:dashed}
+  .md h2.staff::after{content:"　職員用";font-size:11px;font-weight:400;color:var(--muted)}
+  .md ul,.md ol{padding-left:1.5em;margin:6px 0}
+  .md p{margin:6px 0;white-space:pre-wrap}
+  .md table{border-collapse:collapse;width:100%;margin:6px 0;font-size:13px}
+  .md th,.md td{border:1px solid var(--line);padding:5px 8px;text-align:left;vertical-align:top}
+  .md th{background:var(--accent-soft);font-weight:600}
+  .md td:nth-child(2){text-align:center;white-space:nowrap}
+  .md .grade{font-size:34px;font-weight:600;color:var(--accent);line-height:1.2;margin:2px 0 6px}
+  .busy{color:var(--accent);font-size:13px}
+  .busy::before{content:"";display:inline-block;width:10px;height:10px;border:2px solid var(--accent);border-right-color:transparent;border-radius:50%;margin-right:8px;vertical-align:-1px;animation:spin .8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @media (prefers-reduced-motion:reduce){.busy::before{animation:none}}
+  .err{color:var(--warn);font-size:13px;white-space:pre-wrap}
+  .toast{position:fixed;bottom:20px;right:20px;background:var(--ink);color:#fff;padding:8px 14px;border-radius:var(--radius);font-size:13px;opacity:0;transition:opacity .2s}
+  .toast.on{opacity:1}
+  dialog{border:1px solid var(--line);border-radius:var(--radius);padding:20px 24px;max-width:440px;font:inherit}
+  dialog::backdrop{background:rgba(27,39,48,.4)}
+</style>
+</head>
+<body>
+<header>
+  <h1>Careerbot Local ES</h1>
+  <span class="local" id="localBadge">このPCの中だけで処理しています</span>
+</header>
+
+<main>
+  <div>
+    <section class="card">
+      <h2>準備の確認</h2>
+      <ul class="check" id="checks"><li><span class="mark">…</span><span>確認しています</span></li></ul>
+      <p class="note"><button class="btn small" id="recheck">もう一度確認</button></p>
+    </section>
+
+    <section class="card">
+      <h2>ESを貼り付ける</h2>
+      <div class="grid2">
+        <div class="field"><label for="es_type">種類</label>
+          <select id="es_type">
+            <option value="auto">自動判定</option>
+            <option value="gakuchika">ガクチカ</option>
+            <option value="selfpr">自己PR</option>
+            <option value="shibou">志望動機</option>
+            <option value="other">その他</option>
+          </select></div>
+        <div class="field"><label for="char_limit">文字数制限</label><input id="char_limit" inputmode="numeric" placeholder="例：400"></div>
+        <div class="field"><label for="company">応募先（企業・業界）</label><input id="company" placeholder="例：○○銀行／食品メーカー"></div>
+        <div class="field"><label for="position">職種・コース・インターン等</label><input id="position" placeholder="例：総合職／夏インターン"></div>
+      </div>
+      <div class="field"><label for="question">設問文</label><input id="question" placeholder="例：学生時代に最も力を入れたことを教えてください"></div>
+      <div class="field"><label for="text">ES本文</label>
+        <textarea id="text" placeholder="学生のESをここに貼り付けます。学生の氏名など添削に不要な個人情報は消してください。"></textarea>
+        <div class="count"><span id="count">0字</span><span id="limitNote"></span></div>
+      </div>
+      <div class="field"><label for="memo">職員からの補足（任意。面談で本人が話した情報など。修正案に使われます）</label><textarea id="memo"></textarea></div>
+      <div class="field"><label for="grade">学年（任意）</label><input id="grade" placeholder="例：3年" style="max-width:160px"></div>
+      <button class="btn primary wide" id="reviewBtn">添削する</button>
+      <p class="note">添削結果はAIの下書きです。必ず職員が読んで判断し、学生に渡す言葉を選んでください。</p>
+    </section>
+
+    <section class="card">
+      <h2>これまでの添削</h2>
+      <ul class="sessions" id="sessionList"><li class="note">まだありません</li></ul>
+      <p class="note" id="dataDir"></p>
+    </section>
+  </div>
+
+  <div class="doc">
+    <div class="doc-head">
+      <div><span class="title" id="docTitle">添削結果</span> <span class="meta" id="docMeta"></span></div>
+      <div class="row" id="docActions" hidden>
+        <button class="btn small" id="copyStudent">学生向けにコピー</button>
+        <button class="btn small" id="copyAll">全文コピー</button>
+        <button class="btn small" id="dlBtn">Markdownを保存</button>
+        <button class="btn small danger" id="delBtn">削除</button>
+      </div>
+    </div>
+    <div class="doc-body">
+      <div id="status"></div>
+      <div id="pane"></div>
+    </div>
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+<dialog id="confirm">
+  <p id="confirmText"></p>
+  <div class="row" style="justify-content:flex-end">
+    <button class="btn" id="confirmNo">やめる</button>
+    <button class="btn danger" id="confirmYes">削除する</button>
+  </div>
+</dialog>
+
+<script>
+const $ = s => document.querySelector(s);
+let session=null, busy=false, maxInput=4000;
+const STAFF_SECTIONS = ['学生に確認すること'];
+
+async function loadStatus(){
+  const s = await (await fetch('/api/status')).json();
+  maxInput = s.max_input_chars;
+  const items=[]; const add=(ok,label,hint)=>items.push(`<li class="${ok?'ok':'ng'}"><span class="mark">${ok?'✓':'✗'}</span><span>${label}${hint&&!ok?`<span class="hint">${hint}</span>`:''}</span></li>`);
+  add(s.llm.connected, `${s.llm.backend==='ollama'?'Ollama':'LM Studio'}：${s.llm.connected?'接続済み':'接続できません'}`, s.llm.backend==='ollama'?'Ollamaを起動してください（メニューバー／タスクバーのアイコン）':'LM Studioのローカルサーバーを起動してください');
+  add(s.llm.model_available, `LLM：${s.llm.model}${s.llm.model_available?'':'（未取得）'}`, `ターミナルで <code>ollama pull ${s.llm.model}</code> を実行してください`);
+  add(true, s.prompt_kind==='full' ? `添削プロンプト：正式版` : `添削プロンプト：簡易版（公開版）<span class="hint">正式版（有償）は <a href="https://careerbot.tokyo" target="_blank" rel="noopener">careerbot.tokyo</a>。入手後 prompts/es_review.md に置くと自動で切り替わります</span>`);
+  add(true, `外部送信：なし`);
+  add(true, `履歴：${s.save_history?'このPCに保存':'保存しない'}`);
+  add(true, `メモリ：${s.ram_gb} GB`);
+  $('#checks').innerHTML = items.join('');
+  $('#dataDir').textContent = s.save_history ? '保存先：'+s.data_dir : '履歴は保存しない設定です';
+  $('#localBadge').textContent = s.mock ? '確認用モード（AIは動きません）' : 'このPCの中だけで処理しています';
+  renderSessions(s.sessions);
+}
+function renderSessions(list){
+  $('#sessionList').innerHTML = list.length ? list.map(s=>`<li><a href="#" data-id="${s.id}" title="${esc(s.label)}">${esc(s.label||s.id)}</a><time>${s.created.slice(5)}</time></li>`).join('') : '<li class="note">まだありません</li>';
+  document.querySelectorAll('#sessionList a').forEach(a=>a.onclick=e=>{e.preventDefault();openSession(a.dataset.id);});
+}
+$('#recheck').onclick = loadStatus;
+
+/* 文字数 */
+const updateCount = () => {
+  const n = $('#text').value.replace(/\r?\n/g,'').length;
+  const lim = parseInt($('#char_limit').value,10);
+  $('#count').innerHTML = `${n}字${n>maxInput?` <span class="over">（上限${maxInput}字）</span>`:''}`;
+  $('#limitNote').innerHTML = lim ? (n>lim?`<span class="over">制限 ${lim}字を ${n-lim}字 超過</span>`:`制限 ${lim}字（残り ${lim-n}字）`) : '';
+};
+$('#text').oninput = updateCount; $('#char_limit').oninput = updateCount;
+
+/* 添削 */
+$('#reviewBtn').onclick = async () => {
+  const body = {
+    es_type:$('#es_type').value, question:$('#question').value, char_limit:$('#char_limit').value,
+    company:$('#company').value, position:$('#position').value, grade:$('#grade').value,
+    memo:$('#memo').value, text:$('#text').value,
+  };
+  if(body.text.trim().length<50){ showError('ES本文が短すぎます（50字以上貼り付けてください）。'); return; }
+  session=null; renderDoc();
+  setBusy('添削しています。1〜3分ほどかかります。');
+  try{
+    const r = await fetch('/api/review',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    if(!r.ok) throw new Error((await r.json()).detail || r.statusText);
+    session = await r.json(); setBusy(''); renderDoc(); loadStatus();
+  }catch(e){ setBusy(''); showError(e.message); }
+};
+
+function setBusy(msg){ busy=!!msg; $('#status').innerHTML = msg?`<p class="busy">${msg}</p>`:''; $('#reviewBtn').disabled=busy; }
+function showError(msg){ $('#status').innerHTML = `<p class="err">${esc(msg)}</p>`; }
+const esc = s => String(s??'').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const toast = m => { const t=$('#toast'); t.textContent=m; t.classList.add('on'); setTimeout(()=>t.classList.remove('on'),1600); };
+
+async function openSession(id){
+  const r = await fetch('/api/sessions/'+id); if(!r.ok) return;
+  session = await r.json(); $('#status').innerHTML=''; renderDoc();
+  const i=session.input; $('#es_type').value=i.es_type||'auto'; $('#question').value=i.question||''; $('#char_limit').value=i.char_limit||'';
+  $('#company').value=i.company||''; $('#position').value=i.position||''; $('#grade').value=i.grade||''; $('#memo').value=i.memo||''; $('#text').value=i.text||''; updateCount();
+}
+
+function renderDoc(){
+  $('#docActions').hidden = !session;
+  if(!session){ $('#docTitle').textContent='添削結果'; $('#docMeta').textContent='';
+    $('#pane').innerHTML = `<div class="empty">左にESを貼り付けて「添削する」を押してください。<br>結果は評価 → 評価の内訳 → 良い点 → 改善点 → 面接想定質問 → 学生に確認すること の順に出ます。<br>本文は代筆せず、直す場所と本人が考える問いを返します。「学生に確認すること」は職員用で、学生向けコピーには含まれません。</div>`; return; }
+  $('#docTitle').textContent = `添削結果 ${session.created}`;
+  $('#docMeta').textContent = `${session.model||''}`;
+  $('#pane').innerHTML = `<div class="md">${md(session.review)}</div>`;
+}
+
+/* Markdown表示（見出し・箇条書き・番号付き・太字・評価の強調） */
+function md(text){
+  const out=[]; let list=null; let afterGrade=false;
+  const close=()=>{ if(list){out.push(list==='ul'?'</ul>':list==='ol'?'</ol>':'</table>'); list=null;} };
+  for(const raw of text.split('\n')){
+    const l=raw.replace(/\s+$/,'');
+    if(!l.trim()){ close(); continue; }
+    if(/^\s*\|.*\|\s*$/.test(l)){
+      if(/^\s*\|[\s:|-]+\|\s*$/.test(l)) continue;           // 区切り行
+      const cells=l.trim().slice(1,-1).split('|').map(c=>inline(c.trim()));
+      if(list!=='table'){ close(); out.push('<table><tr>'+cells.map(c=>`<th>${c}</th>`).join('')+'</tr>'); list='table'; }
+      else out.push('<tr>'+cells.map(c=>`<td>${c}</td>`).join('')+'</tr>');
+      continue;
+    }
+    const h=l.match(/^#{1,3}\s+(.*)/);
+    if(h){ close(); const name=h[1].trim(); const staff=STAFF_SECTIONS.some(s=>name.includes(s)); afterGrade = name.includes('総合評価'); out.push(`<h2 class="${staff?'staff':''}">${esc(name)}</h2>`); continue; }
+    if(afterGrade){ const g=l.match(/^\**\s*([SABC])\s*\**/); if(g){ out.push(`<p class="grade">${g[1]}</p>`); afterGrade=false; if(l.replace(/^\**\s*[SABC]\s*\**/,'').trim()) out.push(`<p>${inline(l.replace(/^\**\s*[SABC]\s*\**\s*/,''))}</p>`); continue; } }
+    const ul=l.match(/^\s*[-*・]\s+(.*)/); const ol=l.match(/^\s*(\d+)[.)]\s+(.*)/);
+    if(ul){ if(list!=='ul'){close(); out.push('<ul>'); list='ul';} out.push(`<li>${inline(ul[1])}</li>`); continue; }
+    if(ol){ if(list!=='ol'){close(); out.push(`<ol start="${ol[1]}">`); list='ol';} out.push(`<li>${inline(ol[2])}</li>`); continue; }
+    if(list==='ol' && /^\s*(「|→|（)/.test(l) || (list && /^\s{2,}/.test(l))){ out[out.length-1] = out[out.length-1].replace(/<\/li>$/, `<br>${inline(l.trim())}</li>`); continue; }
+    close(); out.push(`<p>${inline(l)}</p>`);
+  }
+  close(); return out.join('');
+}
+const inline = s => esc(s).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+
+/* コピー・保存・削除 */
+function studentText(){
+  // 職員用セクションを除いた本文
+  const parts = session.review.split(/\n(?=#{1,3}\s)/);
+  return parts.filter(p => !STAFF_SECTIONS.some(s => p.split('\n')[0].includes(s))).join('\n').trim();
+}
+$('#copyStudent').onclick = async () => { await navigator.clipboard.writeText(studentText()); toast('学生向けの部分をコピーしました'); };
+$('#copyAll').onclick = async () => { await navigator.clipboard.writeText(session.review); toast('全文をコピーしました'); };
+$('#dlBtn').onclick = () => {
+  const i=session.input;
+  const t=`# ES添削 ${session.created}\n\n- 種類：${$('#es_type').selectedOptions[0].textContent}\n- 設問：${i.question||''}\n- 文字数制限：${i.char_limit||''}\n- 応募先：${i.company||''} ${i.position||''}\n\n## 原文\n\n${i.text}\n\n---\n\n${session.review}\n`;
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([t],{type:'text/markdown'})); a.download=`ES添削_${session.id.slice(0,15)}.md`; a.click();
+};
+$('#delBtn').onclick = () => { $('#confirmText').textContent='この添削（原文と結果）をこのPCから削除します。元に戻せません。'; $('#confirm').showModal(); };
+$('#confirmNo').onclick = () => $('#confirm').close();
+$('#confirmYes').onclick = async () => { await fetch('/api/sessions/'+session.id,{method:'DELETE'}); $('#confirm').close(); session=null; renderDoc(); loadStatus(); };
+
+loadStatus(); renderDoc(); updateCount();
+</script>
+</body>
+</html>
